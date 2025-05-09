@@ -14,15 +14,15 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Bank App Demo"
+args = "Bank App Web Demo"
 
 [[workflows.workflow]]
-name = "Bank App Demo"
+name = "Bank App Web Demo"
 author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "flutter run -d web-server --web-port=5000 --web-hostname=0.0.0.0 lib/bank_app_demo.dart"
+args = "flutter run -d web-server --web-port=5000 --web-hostname=0.0.0.0 lib/simple_web_demo.dart"
 waitForPort = 5000
 
 [deployment]

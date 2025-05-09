@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:provider/provider.dart';
 import 'package:workmanager/workmanager.dart';
 
 import 'providers/app_state_provider.dart';
 import 'screens/home_screen.dart';
+import 'services/auto_start_service.dart';
 import 'services/background_service.dart';
 import 'utils/constants.dart';
 
@@ -44,6 +46,39 @@ Future<void> main() async {
   await flutterLocalNotificationsPlugin.initialize(
     initializationSettings,
   );
+  
+  // Check if app was auto-started and show notification
+  if (!kIsWeb) {
+    try {
+      final autoStartService = AutoStartService();
+      final wasAutoStarted = await autoStartService.wasLaunchedFromBoot();
+      
+      if (wasAutoStarted) {
+        debugPrint('App was auto-started from device boot');
+        
+        // Show notification that app has started monitoring
+        const AndroidNotificationDetails androidPlatformChannelSpecifics =
+            AndroidNotificationDetails(
+          'auto_start_channel',
+          'Auto Start Notifications',
+          importance: Importance.max,
+          priority: Priority.high,
+        );
+        
+        const NotificationDetails platformChannelSpecifics =
+            NotificationDetails(android: androidPlatformChannelSpecifics);
+        
+        await flutterLocalNotificationsPlugin.show(
+          0,
+          'Bank Transaction Tracker Started',
+          'App is automatically monitoring for banking transactions',
+          platformChannelSpecifics,
+        );
+      }
+    } catch (e) {
+      debugPrint('Error handling auto-start: $e');
+    }
+  }
   
   runApp(const MyApp());
 }

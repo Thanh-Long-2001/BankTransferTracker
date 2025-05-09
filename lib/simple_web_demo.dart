@@ -1,47 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  
-  // Show notification that monitoring has started automatically
-  // In a real app, this would be handled by the AutoStartService
-  // and would check if the app was launched by the boot receiver
-  Future.delayed(const Duration(milliseconds: 500), () {
-    ScaffoldMessengerState? messenger;
-    
-    try {
-      // This is a simulated auto-start notification
-      // In a real app, this would be triggered by the boot receiver
-      messenger = scaffoldKey.currentState;
-      if (messenger != null) {
-        messenger.showSnackBar(
-          const SnackBar(
-            content: Text('Transaction monitoring started automatically on app install'),
-            duration: Duration(seconds: 3),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e) {
-      print('Error showing auto-start message: $e');
-    }
-  });
-  
-  runApp(const BankAppDemo());
+void main() {
+  runApp(const BankAppWebDemo());
 }
 
-// Global key for accessing scaffold messenger from outside build context
-final GlobalKey<ScaffoldMessengerState> scaffoldKey = GlobalKey<ScaffoldMessengerState>();
-
-class BankAppDemo extends StatelessWidget {
-  const BankAppDemo({Key? key}) : super(key: key);
+class BankAppWebDemo extends StatelessWidget {
+  const BankAppWebDemo({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Bank Transaction Tracker',
-      scaffoldMessengerKey: scaffoldKey,
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
@@ -55,11 +25,11 @@ class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
 
   @override
-  _HomeScreenState createState() => _HomeScreenState();
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  bool _isServiceRunning = false;
+  bool _isServiceRunning = true; // Start with service active
   List<Transaction> _transactions = [];
 
   @override
@@ -68,30 +38,17 @@ class _HomeScreenState extends State<HomeScreen> {
     // Add some sample transactions
     _loadSampleTransactions();
     
-    // Auto-start monitoring when app initializes
-    _startMonitoringAutomatically();
-  }
-  
-  void _startMonitoringAutomatically() {
-    // Automatic start monitoring on app initialization
-    Future.delayed(const Duration(seconds: 1), () {
-      if (!_isServiceRunning) {
-        setState(() {
-          _isServiceRunning = true;
-        });
-        
-        // In a real app, this would call the actual monitoring service
-        _showStartedNotification();
-      }
+    // Show auto-started message
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _showAutoStartMessage();
     });
   }
   
-  void _showStartedNotification() {
-    // This would show a notification to the user that monitoring has started
+  void _showAutoStartMessage() {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Transaction monitoring started automatically'),
-        duration: Duration(seconds: 3),
+        content: Text('Transaction monitoring started automatically on app install'),
+        duration: Duration(seconds: 5),
         backgroundColor: Colors.green,
       ),
     );
@@ -201,22 +158,31 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            Row(
-              children: [
-                const Icon(Icons.info_outline, color: Colors.blue),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    _isServiceRunning
-                        ? 'App is actively monitoring for banking transactions'
-                        : 'Click Start Monitoring to begin tracking transactions',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.blue.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline, 
+                    color: Colors.blue,
+                    size: 24,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      "Auto-monitoring feature activated: App starts capturing transactions immediately upon installation without requiring manual intervention",
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         ),
