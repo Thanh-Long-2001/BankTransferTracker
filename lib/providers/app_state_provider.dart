@@ -1,39 +1,38 @@
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/app_config.dart';
+import '../models/monitored_app.dart';
 import '../models/transaction.dart';
+import '../services/auto_start_service.dart';
 import '../services/background_service.dart';
-import '../services/database_service.dart';
 import '../services/google_sheets_service.dart';
+import '../services/local_storage_service.dart';
 import '../services/notification_service.dart';
 import '../services/sms_service.dart';
 
+/// Provider class for managing application state
 class AppStateProvider with ChangeNotifier {
   // Services
-  final BackgroundService _backgroundService = BackgroundService();
-  final DatabaseService _databaseService = DatabaseService();
-  final GoogleSheetsService _sheetsService = GoogleSheetsService();
+  final _localStorageService = LocalStorageService();
+  final _backgroundService = BackgroundService();
+  final _sheetsService = GoogleSheetsService();
+  final _autoStartService = AutoStartService();
   
-  // Data
+  // State variables
+  bool _isLoading = false;
+  bool _isInitialized = false;
+  String? _errorMessage;
   AppConfig _appConfig = AppConfig.empty();
   List<Transaction> _recentTransactions = [];
   List<MonitoredApp> _availableApps = [];
   
-  // Status
-  bool _isLoading = true;
-  bool _isInitialized = false;
-  String? _errorMessage;
-  
-  // Getters
-  AppConfig get appConfig => _appConfig;
-  List<Transaction> get recentTransactions => _recentTransactions;
-  List<MonitoredApp> get availableApps => _availableApps;
+  // Getters for state
   bool get isLoading => _isLoading;
-  bool get isInitialized => _isInitialized;
   String? get errorMessage => _errorMessage;
+  List<Transaction> get recentTransactions => List.unmodifiable(_recentTransactions);
+  List<MonitoredApp> get availableApps => List.unmodifiable(_availableApps);
+  AppConfig get appConfig => _appConfig;
   bool get isServiceRunning => _backgroundService.isRunning;
   bool get isGoogleSignedIn => _sheetsService.isSignedIn;
   
@@ -47,8 +46,8 @@ class AppStateProvider with ChangeNotifier {
       // Load app configuration
       await _loadAppConfig();
       
-      // Initialize database service
-      await _databaseService.initialize();
+      // Initialize local storage service
+      await _localStorageService.initialize();
       
       // Initialize background service
       await _backgroundService.initialize(
@@ -64,7 +63,7 @@ class AppStateProvider with ChangeNotifier {
       // Auto-start monitoring regardless of previous state
       // This will ensure monitoring starts automatically on first install
       // and on every app startup
-      _appConfig.isServiceRunning = true;
+      _appConfig = _appConfig.copyWith(isServiceRunning: true);
       await _saveAppConfig();
       await startMonitoringService();
       
@@ -103,10 +102,10 @@ class AppStateProvider with ChangeNotifier {
     }
   }
   
-  // Load recent transactions from database
+  // Load recent transactions from local storage
   Future<void> _loadRecentTransactions() async {
     try {
-      _recentTransactions = await _databaseService.getRecentTransactions();
+      _recentTransactions = await _localStorageService.getRecentTransactions();
       notifyListeners();
     } catch (e) {
       debugPrint('Error loading recent transactions: $e');
@@ -302,12 +301,23 @@ class AppStateProvider with ChangeNotifier {
   }
   
   // Handle new transaction
-  void _onNewTransaction(Transaction transaction) {
+  void _onNewTransaction(Transaction transaction) async {
+    // Save to local storage
+    await _localStorageService.saveTransaction(transaction);
+    
+    // Update UI
     _recentTransactions.insert(0, transaction);
     if (_recentTransactions.length > 50) {
       _recentTransactions.removeLast();
     }
+    
     notifyListeners();
+  }
+  
+  // Check if app was auto-started
+  Future<bool> checkAutoStartStatus() async {
+    final wasAutoStarted = await _autoStartService.wasLaunchedFromBoot();
+    return wasAutoStarted;
   }
   
   // Set loading state
@@ -369,7 +379,7 @@ class AppStateProvider with ChangeNotifier {
   // Get transaction statistics
   Future<Map<String, dynamic>> getTransactionStats() async {
     try {
-      return await _databaseService.getTransactionStats();
+      return await _localStorageService.getTransactionStats();
     } catch (e) {
       debugPrint('Error getting transaction stats: $e');
       return {
@@ -378,6 +388,26 @@ class AppStateProvider with ChangeNotifier {
         'outgoingAmount': 0.0,
         'bankCounts': <String, int>{},
       };
+    }
+  }
+  
+  // Clear all transaction history
+  Future<bool> clearTransactionHistory() async {
+    _setLoading(true);
+    
+    try {
+      final result = await _localStorageService.deleteAllTransactions();
+      
+      if (result) {
+        _recentTransactions = [];
+        notifyListeners();
+      }
+      
+      _setLoading(false);
+      return result;
+    } catch (e) {
+      _setError('Failed to clear transaction history: $e');
+      return false;
     }
   }
 }
