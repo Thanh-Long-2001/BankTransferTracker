@@ -1,0 +1,97 @@
+Title:
+Flutter App to Automatically Listen to Bank Transfer SMS and Notifications, and Log Them into a Google Sheet
+
+Purpose:
+Create a Flutter-based Android application that automatically listens to SMS and notifications from banking or payment apps (like Momo, Vietcombank, MB Bank, Timo, etc.), extracts transfer details, and appends the data into a user-specified Google Sheets file. The app must work in the background to ensure real-time transaction tracking.
+
+Core Features:
+📥 SMS & Notification Listening
+Listen to incoming SMS messages using Android permissions.
+
+Listen to push notifications from user-selected apps using a Notification Listener Service.
+
+Enable a UI screen where users can select which apps' notifications to monitor.
+
+🔍 Data Parsing
+From both SMS and notification content, automatically extract:
+
+Amount transferred
+
+Sender name / bank
+
+Time of transaction
+
+Message description
+
+Transaction direction (IN/OUT) (if inferable)
+
+📄 Google Sheets Integration
+User signs in via Google Sign-In (OAuth2).
+
+Let users:
+
+Select a Google Sheet file from their Drive, or
+
+Manually enter a Google Sheet spreadsheet ID.
+
+Append each parsed transaction as a new row to a specific tab/sheet.
+
+Use Google Sheets API or Apps Script webhook for integration.
+
+⏱ Background Operation
+The app must run in background and:
+
+Continuously monitor SMS inbox and notifications.
+
+Retry syncing to Google Sheets when offline and back online.
+
+Show a persistent notification (“Listening for transactions…”) when background listening is active.
+
+Technical Requirements:
+Flutter & Android Integration
+Use Flutter with Android native platform channels where needed.
+
+Use plugins:
+
+telephony or sms to read SMS.
+
+flutter_notification_listener or native Notification Listener Service.
+
+googleapis + google_sign_in for Sheets API.
+
+Handle Android background services correctly with foreground_service, workmanager, or custom native service.
+
+Data Columns in Google Sheet:
+Date & Time
+
+Sender / Bank
+
+Amount
+
+Message Content
+
+Source (SMS / App Name)
+
+Optional (Stretch Features):
+Allow export to CSV
+
+Search/filter transactions
+
+In-app display of Google Sheet preview
+
+Detect duplicated entries
+
+Dark mode
+
+Permissions Required:
+RECEIVE_SMS
+
+READ_SMS
+
+BIND_NOTIFICATION_LISTENER_SERVICE
+
+FOREGROUND_SERVICE
+
+Internet access
+
+Google account sign-in (OAuth scope for Sheets)
