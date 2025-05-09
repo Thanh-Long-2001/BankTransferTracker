@@ -1,8 +1,8 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
-
 import '../providers/app_state_provider.dart';
 import '../utils/constants.dart';
 import '../utils/permission_helper.dart';
@@ -35,19 +35,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _buildSectionHeader('Monitoring Settings'),
                   _buildMonitoringSettingsCard(provider),
                   const SizedBox(height: 24),
-                  
                   _buildSectionHeader('Google Sheets Integration'),
                   _buildGoogleSheetsCard(provider),
                   const SizedBox(height: 24),
-                  
                   _buildSectionHeader('Permissions'),
                   _buildPermissionsCard(),
                   const SizedBox(height: 24),
-                  
                   _buildSectionHeader('Data Management'),
                   _buildDataManagementCard(provider),
                   const SizedBox(height: 24),
-                  
                   _buildSectionHeader('About'),
                   _buildAboutCard(),
                 ],
@@ -114,7 +110,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const AppSelectionScreen()),
+                MaterialPageRoute(
+                    builder: (context) => const AppSelectionScreen()),
               );
             },
           ),
@@ -125,7 +122,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildGoogleSheetsCard(AppStateProvider provider) {
     final isConfigured = provider.appConfig.isGoogleSheetsConfigured;
-    
+
     return Card(
       child: Column(
         children: [
@@ -134,7 +131,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             subtitle: Text(
               isConfigured
                   ? 'Sheet ID: ${_truncateText(provider.appConfig.googleSheetId ?? "", 20)}\n'
-                    'Tab: ${provider.appConfig.googleSheetTabName ?? ""}'
+                      'Tab: ${provider.appConfig.googleSheetTabName ?? ""}'
                   : 'Not configured',
             ),
             leading: Icon(
@@ -145,7 +142,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const GoogleSheetsConfigScreen()),
+                MaterialPageRoute(
+                    builder: (context) => const GoogleSheetsConfigScreen()),
               );
             },
           ),
@@ -154,9 +152,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ListTile(
               title: const Text('Google Account'),
               subtitle: Text(
-                provider.isGoogleSignedIn
-                    ? 'Signed in'
-                    : 'Not signed in',
+                provider.isGoogleSignedIn ? 'Signed in' : 'Not signed in',
               ),
               leading: Icon(
                 Icons.account_circle,
@@ -195,11 +191,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             subtitle: const Text('Required to read bank SMS messages'),
             trailing: TextButton(
               onPressed: () async {
-                final granted = await PermissionHelper.checkAndRequestSmsPermissions();
+                final granted =
+                    await PermissionHelper.checkAndRequestSmsPermissions();
                 if (!granted && mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('SMS permissions are required for monitoring bank messages.'),
+                      content: Text(
+                          'SMS permissions are required for monitoring bank messages.'),
                       duration: Duration(seconds: 5),
                     ),
                   );
@@ -214,11 +212,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             subtitle: const Text('Required to read banking app notifications'),
             trailing: TextButton(
               onPressed: () async {
-                final granted = await PermissionHelper.checkAndRequestNotificationPermissions();
+                final granted = await PermissionHelper
+                    .checkAndRequestNotificationPermissions();
                 if (!granted && mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Notification access is required for monitoring bank apps.'),
+                      content: Text(
+                          'Notification access is required for monitoring bank apps.'),
                       duration: Duration(seconds: 5),
                     ),
                   );
@@ -242,9 +242,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             leading: const Icon(Icons.file_download),
             onTap: () async {
               _setLoading(true);
-              
+
               try {
-                final transactions = await provider._databaseService.getAllTransactions();
+                final transactions = await provider.getAllTransactions();
                 if (transactions.isEmpty) {
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -256,16 +256,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _setLoading(false);
                   return;
                 }
-                
+
                 // Create CSV content
                 final csvContent = StringBuffer();
-                csvContent.writeln('"Date & Time","Sender/Bank","Amount","Description","Source","Direction"');
-                
+                csvContent.writeln(
+                    '"Date & Time","Sender/Bank","Amount","Description","Source","Direction"');
+
                 for (final transaction in transactions) {
-                  final row = transaction.toGoogleSheetsRow().map((cell) => '"${cell.replaceAll('"', '""')}"').join(',');
+                  final row = transaction
+                      .toGoogleSheetsRow()
+                      .map((cell) => '"${cell.replaceAll('"', '""')}"')
+                      .join(',');
                   csvContent.writeln(row);
                 }
-                
+
                 // Share the CSV content
                 await Share.share(
                   csvContent.toString(),
@@ -280,7 +284,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   );
                 }
               }
-              
+
               _setLoading(false);
             },
           ),
@@ -308,12 +312,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       onPressed: () async {
                         Navigator.pop(context);
                         _setLoading(true);
-                        
+
                         try {
-                          await provider._databaseService.deleteAllTransactions();
-                          await provider._loadRecentTransactions();
-                          
+                          await provider.clearAllTransactions();
+                          await provider.reloadRecentTransactions();
+
                           if (mounted) {
+                            // ignore: use_build_context_synchronously
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                 content: Text('All transaction data cleared'),
@@ -329,7 +334,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             );
                           }
                         }
-                        
+
                         _setLoading(false);
                       },
                       style: TextButton.styleFrom(foregroundColor: Colors.red),
@@ -346,16 +351,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildAboutCard() {
-    return Card(
+    return const Card(
       child: Column(
         children: [
           ListTile(
-            title: const Text('Bank Transaction Tracker'),
-            subtitle: const Text('Version 1.0.0'),
-            leading: const Icon(Icons.info_outline),
+            title: Text('Bank Transaction Tracker'),
+            subtitle: Text('Version 1.0.0'),
+            leading: Icon(Icons.info_outline),
           ),
-          const Divider(),
-          const ListTile(
+          Divider(),
+          ListTile(
             title: Text('How to Use'),
             subtitle: Text(
               '1. Configure Google Sheets\n'

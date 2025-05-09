@@ -6,7 +6,7 @@ import '../utils/constants.dart';
 
 class TransactionListItem extends StatelessWidget {
   final Transaction transaction;
-  
+
   const TransactionListItem({
     Key? key,
     required this.transaction,
@@ -30,7 +30,7 @@ class TransactionListItem extends StatelessWidget {
   Widget _buildLeadingIcon() {
     Color bgColor;
     IconData iconData;
-    
+
     // Set icon based on transaction direction
     if (transaction.direction == TransactionDirection.incoming) {
       bgColor = Colors.green.withOpacity(0.2);
@@ -42,7 +42,7 @@ class TransactionListItem extends StatelessWidget {
       bgColor = Colors.grey.withOpacity(0.2);
       iconData = Icons.swap_horiz;
     }
-    
+
     return Container(
       width: 48,
       height: 48,
@@ -52,8 +52,8 @@ class TransactionListItem extends StatelessWidget {
       ),
       child: Icon(
         iconData,
-        color: transaction.direction == TransactionDirection.incoming 
-            ? Colors.green 
+        color: transaction.direction == TransactionDirection.incoming
+            ? Colors.green
             : transaction.direction == TransactionDirection.outgoing
                 ? Colors.red
                 : Colors.grey,
@@ -76,7 +76,7 @@ class TransactionListItem extends StatelessWidget {
         ),
         const SizedBox(width: 8),
         Text(
-          _formatTime(transaction.timestamp),
+          _formatTime(transaction.timestamp as DateTime),
           style: TextStyle(
             fontSize: 12,
             color: Colors.grey[600],
@@ -105,16 +105,16 @@ class TransactionListItem extends StatelessWidget {
         Row(
           children: [
             Icon(
-              transaction.source == TransactionSource.sms 
-                  ? Icons.sms 
+              transaction.source == TransactionSource.sms
+                  ? Icons.sms
                   : Icons.notifications,
               size: 14,
               color: Colors.grey[600],
             ),
             const SizedBox(width: 4),
             Text(
-              transaction.source == TransactionSource.sms 
-                  ? 'SMS' 
+              transaction.source == TransactionSource.sms
+                  ? 'SMS'
                   : 'Notification',
               style: TextStyle(
                 fontSize: 12,
@@ -160,8 +160,8 @@ class TransactionListItem extends StatelessWidget {
       style: TextStyle(
         fontWeight: FontWeight.bold,
         fontSize: 16,
-        color: transaction.direction == TransactionDirection.incoming 
-            ? Colors.green[700] 
+        color: transaction.direction == TransactionDirection.incoming
+            ? Colors.green[700]
             : transaction.direction == TransactionDirection.outgoing
                 ? Colors.red[700]
                 : Colors.grey[700],
@@ -221,8 +221,8 @@ class _TransactionDetailsSheet extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           _buildDetailItem(
-            context, 
-            'Amount', 
+            context,
+            'Amount',
             transaction.formattedAmount,
             valueColor: transaction.direction == TransactionDirection.incoming
                 ? Colors.green[700]
@@ -231,18 +231,19 @@ class _TransactionDetailsSheet extends StatelessWidget {
                     : null,
           ),
           _buildDetailItem(
-            context, 
-            'Bank/Sender', 
+            context,
+            'Bank/Sender',
             transaction.bank,
           ),
           _buildDetailItem(
-            context, 
-            'Date & Time', 
-            DateFormat('yyyy-MM-dd HH:mm:ss').format(transaction.timestamp),
+            context,
+            'Date & Time',
+            DateFormat('yyyy-MM-dd HH:mm:ss')
+                .format(transaction.timestamp as DateTime),
           ),
           _buildDetailItem(
-            context, 
-            'Direction', 
+            context,
+            'Direction',
             transaction.direction == TransactionDirection.incoming
                 ? 'Incoming (Credit)'
                 : transaction.direction == TransactionDirection.outgoing
@@ -250,15 +251,15 @@ class _TransactionDetailsSheet extends StatelessWidget {
                     : 'Unknown',
           ),
           _buildDetailItem(
-            context, 
-            'Source', 
+            context,
+            'Source',
             transaction.source == TransactionSource.sms
                 ? 'SMS'
                 : 'Notification (${transaction.sourceAppPackage})',
           ),
           _buildDetailItem(
-            context, 
-            'Sync Status', 
+            context,
+            'Sync Status',
             transaction.synced ? 'Synced to Google Sheets' : 'Not synced yet',
             valueColor: transaction.synced ? Colors.green : Colors.orange,
           ),
@@ -266,8 +267,8 @@ class _TransactionDetailsSheet extends StatelessWidget {
           const Divider(),
           const SizedBox(height: 8),
           _buildDetailItem(
-            context, 
-            'Full Message', 
+            context,
+            'Full Message',
             transaction.description,
             isFullWidth: true,
           ),
@@ -278,8 +279,8 @@ class _TransactionDetailsSheet extends StatelessWidget {
   }
 
   Widget _buildDetailItem(
-    BuildContext context, 
-    String label, 
+    BuildContext context,
+    String label,
     String value, {
     Color? valueColor,
     bool isFullWidth = false,

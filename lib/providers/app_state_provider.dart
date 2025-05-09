@@ -18,7 +18,7 @@ class AppStateProvider with ChangeNotifier {
   final _backgroundService = BackgroundService();
   final _sheetsService = GoogleSheetsService();
   final _autoStartService = AutoStartService();
-  
+
   // State variables
   bool _isLoading = false;
   bool _isInitialized = false;
@@ -26,60 +26,73 @@ class AppStateProvider with ChangeNotifier {
   AppConfig _appConfig = AppConfig.empty();
   List<Transaction> _recentTransactions = [];
   List<MonitoredApp> _availableApps = [];
-  
+
   // Getters for state
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
-  List<Transaction> get recentTransactions => List.unmodifiable(_recentTransactions);
+  List<Transaction> get recentTransactions =>
+      List.unmodifiable(_recentTransactions);
   List<MonitoredApp> get availableApps => List.unmodifiable(_availableApps);
   AppConfig get appConfig => _appConfig;
   bool get isServiceRunning => _backgroundService.isRunning;
   bool get isGoogleSignedIn => _sheetsService.isSignedIn;
-  
+
+  Future<List<Transaction>> getAllTransactions() async {
+    return await _localStorageService.getTransactions();
+  }
+
+  Future<bool> clearAllTransactions() async {
+    return await _localStorageService.deleteAllTransactions();
+  }
+
+  Future<void> reloadRecentTransactions() async {
+    await _loadRecentTransactions();
+  }
+
   // Initialize the provider
   Future<void> initialize() async {
     if (_isInitialized) return;
-    
+
     _setLoading(true);
-    
+
     try {
       // Load app configuration
       await _loadAppConfig();
-      
+
       // Initialize local storage service
       await _localStorageService.initialize();
-      
+
       // Initialize background service
       await _backgroundService.initialize(
         onNewTransactionCallback: _onNewTransaction,
       );
-      
+
       // Initialize Google Sheets service
       await _sheetsService.initialize();
-      
+
       // Load recent transactions
       await _loadRecentTransactions();
-      
+
       // Auto-start monitoring regardless of previous state
       // This will ensure monitoring starts automatically on first install
       // and on every app startup
       _appConfig = _appConfig.copyWith(isServiceRunning: true);
       await _saveAppConfig();
       await startMonitoringService();
-      
+
       _isInitialized = true;
       _setLoading(false);
     } catch (e) {
       _setError('Failed to initialize app: $e');
     }
   }
-  
+
   // Load app configuration from shared preferences
   Future<void> _loadAppConfig() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final configJson = prefs.getString('app_config');
-      
+
       if (configJson != null) {
         _appConfig = AppConfig.fromJsonString(configJson);
       } else {
@@ -91,7 +104,7 @@ class AppStateProvider with ChangeNotifier {
       _appConfig = AppConfig.empty();
     }
   }
-  
+
   // Save app configuration to shared preferences
   Future<void> _saveAppConfig() async {
     try {
@@ -101,7 +114,7 @@ class AppStateProvider with ChangeNotifier {
       debugPrint('Error saving app config: $e');
     }
   }
-  
+
   // Load recent transactions from local storage
   Future<void> _loadRecentTransactions() async {
     try {
@@ -111,19 +124,19 @@ class AppStateProvider with ChangeNotifier {
       debugPrint('Error loading recent transactions: $e');
     }
   }
-  
+
   // Start the monitoring service
   Future<bool> startMonitoringService() async {
     _setLoading(true);
-    
+
     try {
       final result = await _backgroundService.startService();
-      
+
       if (result) {
         _appConfig = _appConfig.copyWith(isServiceRunning: true);
         await _saveAppConfig();
       }
-      
+
       _setLoading(false);
       return result;
     } catch (e) {
@@ -131,19 +144,19 @@ class AppStateProvider with ChangeNotifier {
       return false;
     }
   }
-  
+
   // Stop the monitoring service
   Future<bool> stopMonitoringService() async {
     _setLoading(true);
-    
+
     try {
       final result = await _backgroundService.stopService();
-      
+
       if (result) {
         _appConfig = _appConfig.copyWith(isServiceRunning: false);
         await _saveAppConfig();
       }
-      
+
       _setLoading(false);
       return result;
     } catch (e) {
@@ -151,31 +164,31 @@ class AppStateProvider with ChangeNotifier {
       return false;
     }
   }
-  
+
   // Update Google Sheets configuration
   Future<void> updateGoogleSheetsConfig({
     required String sheetId,
     required String sheetTabName,
   }) async {
     _setLoading(true);
-    
+
     try {
       _appConfig = _appConfig.copyWith(
         googleSheetId: sheetId,
         googleSheetTabName: sheetTabName,
       );
-      
+
       await _saveAppConfig();
       _setLoading(false);
     } catch (e) {
       _setError('Failed to update Google Sheets config: $e');
     }
   }
-  
+
   // Sign in with Google
   Future<bool> signInWithGoogle() async {
     _setLoading(true);
-    
+
     try {
       final result = await _sheetsService.signIn();
       _setLoading(false);
@@ -185,11 +198,11 @@ class AppStateProvider with ChangeNotifier {
       return false;
     }
   }
-  
+
   // Sign out from Google
   Future<void> signOutFromGoogle() async {
     _setLoading(true);
-    
+
     try {
       await _sheetsService.signOut();
       _setLoading(false);
@@ -197,25 +210,26 @@ class AppStateProvider with ChangeNotifier {
       _setError('Failed to sign out from Google: $e');
     }
   }
-  
+
   // Get user's Google Sheets
   Future<List<Map<String, String>>> getUserSpreadsheets() async {
     _setLoading(true);
-    
+
     try {
-      final sheets = await _sheetsService.getUserSpreadsheets();
+      final sheets =
+          await _sheetsService.getUserSpreadsheets(spreadsheetId: '');
       _setLoading(false);
-      return sheets;
+      return sheets as List<Map<String, String>>;
     } catch (e) {
       _setError('Failed to get user spreadsheets: $e');
       return [];
     }
   }
-  
+
   // Get sheets in a spreadsheet
   Future<List<String>> getSpreadsheetSheets(String spreadsheetId) async {
     _setLoading(true);
-    
+
     try {
       final sheets = await _sheetsService.getSpreadsheetSheets(spreadsheetId);
       _setLoading(false);
@@ -225,11 +239,11 @@ class AppStateProvider with ChangeNotifier {
       return [];
     }
   }
-  
+
   // Create a new spreadsheet
   Future<Map<String, String>?> createNewSpreadsheet(String title) async {
     _setLoading(true);
-    
+
     try {
       final sheet = await _sheetsService.createSpreadsheet(title);
       _setLoading(false);
@@ -239,87 +253,87 @@ class AppStateProvider with ChangeNotifier {
       return null;
     }
   }
-  
+
   // Update monitored apps
   Future<void> updateMonitoredApps(List<String> packageNames) async {
     _setLoading(true);
-    
+
     try {
       _appConfig = _appConfig.copyWith(selectedAppPackages: packageNames);
       await _saveAppConfig();
-      
+
       // If service is running, restart it to apply new settings
       if (_appConfig.isServiceRunning) {
         await stopMonitoringService();
         await startMonitoringService();
       }
-      
+
       _setLoading(false);
     } catch (e) {
       _setError('Failed to update monitored apps: $e');
     }
   }
-  
+
   // Update SMS monitoring setting
   Future<void> updateSmsMonitoring(bool enabled) async {
     _setLoading(true);
-    
+
     try {
       _appConfig = _appConfig.copyWith(enableSmsMonitoring: enabled);
       await _saveAppConfig();
-      
+
       // If service is running, restart it to apply new settings
       if (_appConfig.isServiceRunning) {
         await stopMonitoringService();
         await startMonitoringService();
       }
-      
+
       _setLoading(false);
     } catch (e) {
       _setError('Failed to update SMS monitoring: $e');
     }
   }
-  
+
   // Update notification monitoring setting
   Future<void> updateNotificationMonitoring(bool enabled) async {
     _setLoading(true);
-    
+
     try {
       _appConfig = _appConfig.copyWith(enableNotificationMonitoring: enabled);
       await _saveAppConfig();
-      
+
       // If service is running, restart it to apply new settings
       if (_appConfig.isServiceRunning) {
         await stopMonitoringService();
         await startMonitoringService();
       }
-      
+
       _setLoading(false);
     } catch (e) {
       _setError('Failed to update notification monitoring: $e');
     }
   }
-  
+
   // Handle new transaction
   void _onNewTransaction(Transaction transaction) async {
     // Save to local storage
     await _localStorageService.saveTransaction(transaction);
-    
+
     // Update UI
     _recentTransactions.insert(0, transaction);
     if (_recentTransactions.length > 50) {
       _recentTransactions.removeLast();
     }
-    
+
     notifyListeners();
   }
-  
+
   // Check if app was auto-started
   Future<bool> checkAutoStartStatus() async {
     final wasAutoStarted = await _autoStartService.wasLaunchedFromBoot();
     return wasAutoStarted;
   }
-  
+
   // Set loading state
   void _setLoading(bool loading) {
     _isLoading = loading;
@@ -328,24 +342,24 @@ class AppStateProvider with ChangeNotifier {
     }
     notifyListeners();
   }
-  
+
   // Set error message
   void _setError(String message) {
     _errorMessage = message;
     _isLoading = false;
     notifyListeners();
   }
-  
+
   // Clear error message
   void clearError() {
     _errorMessage = null;
     notifyListeners();
   }
-  
+
   // Load installed apps that might send financial notifications
   Future<void> loadInstalledApps() async {
     _setLoading(true);
-    
+
     try {
       // This would normally use a package like device_apps or installed_apps
       // We're using a predefined list for simplicity
@@ -359,23 +373,27 @@ class AppStateProvider with ChangeNotifier {
         {'packageName': 'com.vietinbank.ipay', 'appName': 'VietinBank iPay'},
         {'packageName': 'mobile.acb.com.vn', 'appName': 'ACB Mobile'},
         {'packageName': 'com.vnpay.vpbank', 'appName': 'VPBank Mobile'},
-        {'packageName': 'com.VnptEpay.development.scb', 'appName': 'Sacombank mBanking'},
+        {
+          'packageName': 'com.VnptEpay.development.scb',
+          'appName': 'Sacombank mBanking'
+        },
       ];
-      
+
       _availableApps = potentialBankingApps.map((app) {
         return MonitoredApp(
           packageName: app['packageName']!,
           appName: app['appName']!,
-          isSelected: _appConfig.selectedAppPackages.contains(app['packageName']!),
+          isSelected:
+              _appConfig.selectedAppPackages.contains(app['packageName']!),
         );
       }).toList();
-      
+
       _setLoading(false);
     } catch (e) {
       _setError('Failed to load installed apps: $e');
     }
   }
-  
+
   // Get transaction statistics
   Future<Map<String, dynamic>> getTransactionStats() async {
     try {
@@ -390,19 +408,19 @@ class AppStateProvider with ChangeNotifier {
       };
     }
   }
-  
+
   // Clear all transaction history
   Future<bool> clearTransactionHistory() async {
     _setLoading(true);
-    
+
     try {
       final result = await _localStorageService.deleteAllTransactions();
-      
+
       if (result) {
         _recentTransactions = [];
         notifyListeners();
       }
-      
+
       _setLoading(false);
       return result;
     } catch (e) {

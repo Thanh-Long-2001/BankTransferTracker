@@ -37,17 +37,18 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     // Add some sample transactions
     _loadSampleTransactions();
-    
+
     // Show auto-started message
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _showAutoStartMessage();
     });
   }
-  
+
   void _showAutoStartMessage() {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Transaction monitoring started automatically on app install'),
+        content:
+            Text('Transaction monitoring started automatically on app install'),
         duration: Duration(seconds: 5),
         backgroundColor: Colors.green,
       ),
@@ -141,7 +142,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 Chip(
-                  backgroundColor: _isServiceRunning ? Colors.green : Colors.red,
+                  backgroundColor:
+                      _isServiceRunning ? Colors.green : Colors.red,
                   label: Text(
                     _isServiceRunning ? 'Active' : 'Inactive',
                     style: const TextStyle(color: Colors.white),
@@ -164,14 +166,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: Colors.blue.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Row(
+              child: const Row(
                 children: [
                   Icon(
-                    Icons.info_outline, 
+                    Icons.info_outline,
                     color: Colors.blue,
                     size: 24,
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       "Auto-monitoring feature activated: App starts capturing transactions immediately upon installation without requiring manual intervention",

@@ -20,38 +20,39 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   bool _permissionsChecked = false;
-  
+
   @override
   void initState() {
     super.initState();
-    
+
     // Initialize app state
     Future.microtask(() async {
       final provider = Provider.of<AppStateProvider>(context, listen: false);
       await provider.initialize();
-      
+
       // Check permissions
       if (!_permissionsChecked) {
         _checkAndRequestPermissions();
       }
     });
   }
-  
+
   // Check and request required permissions
   Future<void> _checkAndRequestPermissions() async {
     if (mounted) {
-      final permissionsGranted = await PermissionHelper.checkAndRequestPermissions();
-      
+      final permissionsGranted =
+          await PermissionHelper.checkAndRequestPermissions();
+
       if (!permissionsGranted && mounted) {
         _showPermissionDialog();
       }
-      
+
       setState(() {
         _permissionsChecked = true;
       });
     }
   }
-  
+
   // Show permission dialog
   void _showPermissionDialog() {
     showDialog(
@@ -75,7 +76,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -100,7 +101,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: CircularProgressIndicator(),
             );
           }
-          
+
           if (provider.errorMessage != null) {
             return Center(
               child: Column(
@@ -123,7 +124,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             );
           }
-          
+
           return Column(
             children: [
               _buildStatusCard(provider),
@@ -138,12 +139,12 @@ class _HomeScreenState extends State<HomeScreen> {
       floatingActionButton: _buildFloatingActionButton(),
     );
   }
-  
+
   // Build the status card at the top
   Widget _buildStatusCard(AppStateProvider provider) {
     final bool isConfigured = provider.appConfig.isGoogleSheetsConfigured;
     final bool isRunning = provider.isServiceRunning;
-    
+
     return Card(
       margin: const EdgeInsets.all(12),
       child: Padding(
@@ -223,7 +224,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-  
+
   // Build status row for configuration items
   Widget _buildStatusRow(
     String label,
@@ -250,7 +251,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-  
+
   // Build transaction statistics card
   Widget _buildTransactionStats(AppStateProvider provider) {
     return FutureBuilder<Map<String, dynamic>>(
@@ -259,18 +260,18 @@ class _HomeScreenState extends State<HomeScreen> {
         if (!snapshot.hasData) {
           return const SizedBox(height: 0);
         }
-        
+
         final stats = snapshot.data!;
         final totalCount = stats['totalCount'] as int;
         final incomingAmount = stats['incomingAmount'] as double;
         final outgoingAmount = stats['outgoingAmount'] as double;
-        
+
         final formatter = NumberFormat.currency(symbol: '\$');
-        
+
         if (totalCount == 0) {
           return const SizedBox(height: 0);
         }
-        
+
         return Card(
           margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
           child: Padding(
@@ -300,7 +301,7 @@ class _HomeScreenState extends State<HomeScreen> {
       },
     );
   }
-  
+
   // Build statistics column
   Widget _buildStatColumn(String label, String value, Color color) {
     return Column(
@@ -324,11 +325,11 @@ class _HomeScreenState extends State<HomeScreen> {
       ],
     );
   }
-  
+
   // Build transactions list
   Widget _buildTransactionsList(AppStateProvider provider) {
     final transactions = provider.recentTransactions;
-    
+
     if (transactions.isEmpty) {
       return const Center(
         child: Column(
@@ -358,29 +359,29 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       );
     }
-    
+
     // Group transactions by date
     final Map<String, List<Transaction>> groupedTransactions = {};
-    
+
     for (final transaction in transactions) {
-      final dateStr = DateFormat('yyyy-MM-dd').format(transaction.timestamp);
+      final dateStr = transaction.timestamp as String;
       if (!groupedTransactions.containsKey(dateStr)) {
         groupedTransactions[dateStr] = [];
       }
       groupedTransactions[dateStr]!.add(transaction);
     }
-    
+
     // Sort dates in descending order
     final sortedDates = groupedTransactions.keys.toList()
       ..sort((a, b) => b.compareTo(a));
-    
+
     return ListView.builder(
       padding: const EdgeInsets.only(bottom: 80),
       itemCount: sortedDates.length,
       itemBuilder: (context, index) {
         final date = sortedDates[index];
         final dateTransactions = groupedTransactions[date]!;
-        
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -403,30 +404,34 @@ class _HomeScreenState extends State<HomeScreen> {
       },
     );
   }
-  
+
   // Format date header
   String _formatDateHeader(String dateStr) {
     final date = DateTime.parse(dateStr);
     final now = DateTime.now();
-    
-    if (date.year == now.year && date.month == now.month && date.day == now.day) {
+
+    if (date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day) {
       return 'Today';
     }
-    
-    if (date.year == now.year && date.month == now.month && date.day == now.day - 1) {
+
+    if (date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day - 1) {
       return 'Yesterday';
     }
-    
+
     return DateFormat('EEEE, MMMM d, y').format(date);
   }
-  
+
   // Build floating action button
   Widget _buildFloatingActionButton() {
     return Consumer<AppStateProvider>(
       builder: (context, provider, child) {
         final isConfigured = provider.appConfig.isGoogleSheetsConfigured;
         final isRunning = provider.isServiceRunning;
-        
+
         if (!isConfigured) {
           return FloatingActionButton.extended(
             onPressed: () => _navigateToGoogleSheetsConfig(),
@@ -435,7 +440,7 @@ class _HomeScreenState extends State<HomeScreen> {
             backgroundColor: ColorConstants.accentColor,
           );
         }
-        
+
         if (!isRunning) {
           return FloatingActionButton.extended(
             onPressed: () => _toggleMonitoringService(provider),
@@ -444,12 +449,12 @@ class _HomeScreenState extends State<HomeScreen> {
             backgroundColor: Colors.green,
           );
         }
-        
+
         return const SizedBox.shrink();
       },
     );
   }
-  
+
   // Navigate to Google Sheets configuration screen
   void _navigateToGoogleSheetsConfig() {
     Navigator.push(
@@ -457,7 +462,7 @@ class _HomeScreenState extends State<HomeScreen> {
       MaterialPageRoute(builder: (context) => const GoogleSheetsConfigScreen()),
     );
   }
-  
+
   // Navigate to app selection screen
   void _navigateToAppSelection() {
     Navigator.push(
@@ -465,21 +470,22 @@ class _HomeScreenState extends State<HomeScreen> {
       MaterialPageRoute(builder: (context) => const AppSelectionScreen()),
     );
   }
-  
+
   // Toggle monitoring service
   Future<void> _toggleMonitoringService(AppStateProvider provider) async {
     if (provider.isServiceRunning) {
       await provider.stopMonitoringService();
     } else {
-      final permissionsGranted = await PermissionHelper.checkAndRequestPermissions();
-      
+      final permissionsGranted =
+          await PermissionHelper.checkAndRequestPermissions();
+
       if (!permissionsGranted) {
         if (mounted) {
           _showPermissionDialog();
         }
         return;
       }
-      
+
       await provider.startMonitoringService();
     }
   }

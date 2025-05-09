@@ -1,3 +1,4 @@
+import 'package:bank_transaction_tracker/models/monitored_app.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -16,53 +17,53 @@ class _AppSelectionScreenState extends State<AppSelectionScreen> {
   List<MonitoredApp> _apps = [];
   List<String> _selectedPackages = [];
   bool _isLoading = true;
-  
+
   @override
   void initState() {
     super.initState();
-    
+
     _loadApps();
   }
-  
+
   // Load apps that can be monitored
   Future<void> _loadApps() async {
     final provider = Provider.of<AppStateProvider>(context, listen: false);
-    
+
     setState(() {
       _isLoading = true;
     });
-    
+
     // Load installed apps
     await provider.loadInstalledApps();
-    
+
     // Load the current selection
     _selectedPackages = List.from(provider.appConfig.selectedAppPackages);
-    
+
     setState(() {
       _apps = provider.availableApps;
       _isLoading = false;
     });
   }
-  
+
   // Save selected apps
   Future<void> _saveSelection() async {
     final provider = Provider.of<AppStateProvider>(context, listen: false);
-    
+
     setState(() {
       _isLoading = true;
     });
-    
+
     await provider.updateMonitoredApps(_selectedPackages);
-    
+
     if (mounted) {
       setState(() {
         _isLoading = false;
       });
-      
+
       Navigator.pop(context);
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -95,11 +96,13 @@ class _AppSelectionScreenState extends State<AppSelectionScreen> {
                           itemCount: _apps.length,
                           itemBuilder: (context, index) {
                             final app = _apps[index];
-                            final isSelected = _selectedPackages.contains(app.packageName);
-                            
+                            final isSelected =
+                                _selectedPackages.contains(app.packageName);
+
                             return ListTile(
                               leading: CircleAvatar(
-                                backgroundColor: ColorConstants.primaryColor.withOpacity(0.1),
+                                backgroundColor: ColorConstants.primaryColor
+                                    .withOpacity(0.1),
                                 child: Icon(
                                   Icons.account_balance,
                                   color: ColorConstants.primaryColor,
