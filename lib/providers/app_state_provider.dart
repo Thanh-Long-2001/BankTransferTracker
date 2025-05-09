@@ -61,10 +61,12 @@ class AppStateProvider with ChangeNotifier {
       // Load recent transactions
       await _loadRecentTransactions();
       
-      // If service was running, restart it
-      if (_appConfig.isServiceRunning) {
-        await startMonitoringService();
-      }
+      // Auto-start monitoring regardless of previous state
+      // This will ensure monitoring starts automatically on first install
+      // and on every app startup
+      _appConfig.isServiceRunning = true;
+      await _saveAppConfig();
+      await startMonitoringService();
       
       _isInitialized = true;
       _setLoading(false);
