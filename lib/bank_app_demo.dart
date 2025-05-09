@@ -36,6 +36,34 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     // Add some sample transactions
     _loadSampleTransactions();
+    
+    // Auto-start monitoring when app initializes
+    _startMonitoringAutomatically();
+  }
+  
+  void _startMonitoringAutomatically() {
+    // Automatic start monitoring on app initialization
+    Future.delayed(const Duration(seconds: 1), () {
+      if (!_isServiceRunning) {
+        setState(() {
+          _isServiceRunning = true;
+        });
+        
+        // In a real app, this would call the actual monitoring service
+        _showStartedNotification();
+      }
+    });
+  }
+  
+  void _showStartedNotification() {
+    // This would show a notification to the user that monitoring has started
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Transaction monitoring started automatically'),
+        duration: Duration(seconds: 3),
+        backgroundColor: Colors.green,
+      ),
+    );
   }
 
   void _loadSampleTransactions() {
